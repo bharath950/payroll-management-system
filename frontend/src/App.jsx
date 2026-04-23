@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
-import api, { getAdminToken, setAdminToken } from "./api/client";
-import SectionCard from "./components/SectionCard";
+import api from "./api/client";
 import StatusMessage from "./components/StatusMessage";
-import UploadLogTable from "./components/UploadLogTable";
-import SalaryDetails from "./components/SalaryDetails";
 import EmployeeSlipPage from "./components/EmployeeSlipPage";
+import companyLogo from "./assets/inserva-logo.png";
 
 function getEmployeeViewState() {
   const params = new URLSearchParams(window.location.search);
@@ -20,17 +18,6 @@ function getEmployeeViewState() {
 }
 
 export default function App() {
-  const [adminCredentials, setAdminCredentials] = useState({ username: "", password: "" });
-  const [adminUser, setAdminUser] = useState(null);
-  const [adminStatus, setAdminStatus] = useState({ type: "info", message: "" });
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState({ type: "info", message: "" });
-  const [uploadLog, setUploadLog] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [recentLogs, setRecentLogs] = useState([]);
-
   const initialEmployeeView = getEmployeeViewState();
   const [currentView, setCurrentView] = useState(initialEmployeeView.view);
   const [employeeCode, setEmployeeCode] = useState(initialEmployeeView.code);
@@ -41,9 +28,9 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
-  useEffect(() => {
-    hydrateAdminSession();
-  }, []);
+  const [enquiryForm, setEnquiryForm] = useState({ name: "", phone: "", email: "" });
+  const [enquiryStatus, setEnquiryStatus] = useState({ type: "info", message: "" });
+  const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
 
   useEffect(() => {
     function handlePopState() {
@@ -63,101 +50,11 @@ export default function App() {
     }
   }, [currentView, employeeCode, payrollMonth]);
 
-  async function hydrateAdminSession() {
-    if (!getAdminToken()) return;
-
-    try {
-      const { data } = await api.get("/auth/me");
-      setAdminUser(data.admin);
-      setAdminStatus({ type: "success", message: `Signed in as ${data.admin.username}` });
-      fetchUploadLogs();
-    } catch {
-      setAdminToken(null);
-      setAdminUser(null);
-    }
-  }
-
-  async function fetchUploadLogs() {
-    try {
-      const { data } = await api.get("/upload-logs?limit=5");
-      setRecentLogs(data);
-    } catch {
-      setRecentLogs([]);
-    }
-  }
-
-  async function handleAdminLogin(event) {
-    event.preventDefault();
-
-    setIsAuthenticating(true);
-    setAdminStatus({ type: "info", message: "Signing in..." });
-
-    try {
-      const { data } = await api.post("/auth/login", adminCredentials);
-      setAdminToken(data.token);
-      setAdminUser(data.admin);
-      setAdminStatus({ type: "success", message: `Signed in as ${data.admin.username}` });
-      setAdminCredentials({ username: data.admin.username, password: "" });
-      fetchUploadLogs();
-    } catch (error) {
-      setAdminStatus({
-        type: "error",
-        message: error.response?.data?.message || "Unable to sign in."
-      });
-    } finally {
-      setIsAuthenticating(false);
-    }
-  }
-
-  function handleAdminLogout() {
-    setAdminToken(null);
-    setAdminUser(null);
-    setRecentLogs([]);
-    setUploadLog(null);
-    setUploadFile(null);
-    setAdminStatus({ type: "info", message: "Signed out." });
-  }
-
-  async function handleUpload(event) {
-    event.preventDefault();
-
-    if (!uploadFile) {
-      setUploadStatus({ type: "error", message: "Please choose an .xlsx file to upload." });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", uploadFile);
-
-    setIsUploading(true);
-    setUploadStatus({ type: "info", message: "Uploading and processing salary data..." });
-    setUploadLog(null);
-
-    try {
-      const { data } = await api.post("/upload-salary", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-      setUploadLog(data.log);
-      setUploadStatus({ type: "success", message: data.message });
-      setUploadFile(null);
-      fetchUploadLogs();
-    } catch (error) {
-      setUploadStatus({
-        type: "error",
-        message:
-          error.response?.data?.message ||
-          "Upload failed. Please check your session and try again."
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  }
-
   async function handleSearch(event) {
     event.preventDefault();
 
     if (!employeeCode || !payrollMonth) {
-      setEmployeeStatus({ type: "error", message: "Employee code and month are required." });
+      setEmployeeStatus({ type: "error", message: "Please enter Employee ID and select Month" });
       return;
     }
 
@@ -186,6 +83,7 @@ export default function App() {
       if (salaryResponse.status === "fulfilled") {
         setSalaryData(salaryResponse.value.data);
         setEmployeeStatus({ type: "success", message: "Salary record found." });
+
         if (navigateOnSuccess) {
           const params = new URLSearchParams({
             view: "employee-slip",
@@ -277,6 +175,29 @@ export default function App() {
     }
   }
 
+  async function handleEnquirySubmit() {
+    if (!enquiryForm.name || !enquiryForm.phone || !enquiryForm.email) {
+      setEnquiryStatus({ type: "error", message: "Please fill all details" });
+      return;
+    }
+
+    setIsSubmittingEnquiry(true);
+    setEnquiryStatus({ type: "info", message: "Submitting details..." });
+
+    try {
+      await api.post("/enquiry", enquiryForm);
+      setEnquiryStatus({ type: "success", message: "Details submitted successfully" });
+      setEnquiryForm({ name: "", phone: "", email: "" });
+    } catch (error) {
+      setEnquiryStatus({
+        type: "error",
+        message: error.response?.data?.message || "Error submitting details"
+      });
+    } finally {
+      setIsSubmittingEnquiry(false);
+    }
+  }
+
   function handleBackToSearch() {
     window.history.pushState({}, "", window.location.pathname);
     setCurrentView("home");
@@ -301,160 +222,179 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
-      <header className="hero">
-        <div className="hero-copy-wrap">
-          <p className="eyebrow">Payroll Management System</p>
-          <h1>Salary operations for high-volume workforce teams.</h1>
-          <p className="hero-copy">
-            Upload monthly payroll in Excel, store salary history securely, and let employees
-            retrieve salary slips instantly with their employee code.
-          </p>
+    <div className="classic-page">
+      <header>
+        <div className="header-brand">
+          <img src={companyLogo} alt="Inserva Logo" />
+          
         </div>
-        <div className="hero-panel">
-          <div className="hero-stat">
-            <span>Protected Admin Area</span>
-            <strong>JWT Login</strong>
-          </div>
-          <div className="hero-stat">
-            <span>Employee Access</span>
-            <strong>Self-Service Search</strong>
-          </div>
-          <div className="hero-stat">
-            <span>Slip Delivery</span>
-            <strong>Instant PDF</strong>
-          </div>
-        </div>
+        <nav>
+          <a href="#home">Home</a>
+          <a href="#about">About</a>
+          <a href="#services">Services</a>
+          <a href="#salary">Salary Slip</a>
+          <a href="#contact">Contact</a>
+        </nav>
       </header>
 
-      <main className="main-grid">
-        <SectionCard
-          title="Admin Workspace"
-          subtitle="Sign in to upload payroll sheets and review recent processing activity."
-        >
-          {!adminUser ? (
-            <>
-              <form className="stack" onSubmit={handleAdminLogin}>
-                <label className="field">
-                  <span>Admin Username</span>
-                  <input
-                    type="text"
-                    placeholder="admin"
-                    value={adminCredentials.username}
-                    onChange={(event) =>
-                      setAdminCredentials((current) => ({
-                        ...current,
-                        username: event.target.value
-                      }))
-                    }
-                  />
-                </label>
+      <section className="hero" id="home">
+        <div className="hero-content">
+          <h1>Trusted Manpower Solutions</h1>
+          <p>Providing Skilled &amp; Unskilled Workforce with Safety &amp; Trust</p>
+          <a href="#contact" className="btn">
+            Contact Us
+          </a>
+        </div>
+      </section>
 
-                <label className="field">
-                  <span>Password</span>
-                  <input
-                    type="password"
-                    placeholder="Enter admin password"
-                    value={adminCredentials.password}
-                    onChange={(event) =>
-                      setAdminCredentials((current) => ({
-                        ...current,
-                        password: event.target.value
-                      }))
-                    }
-                  />
-                </label>
+      <section id="about" className="about">
+        <div className="about-text">
+          <h2>About Us</h2>
+          <p>
+            <strong>Inserva Enterprises LLP</strong> is a professional manpower solutions provider
+            delivering reliable and compliant workforce services across industrial sectors. With
+            200+ employees across multiple plant locations, we support large-scale operations with
+            efficiency and discipline.
+          </p>
 
-                <button className="primary-button" type="submit" disabled={isAuthenticating}>
-                  {isAuthenticating ? "Signing In..." : "Sign In to Admin Workspace"}
-                </button>
-              </form>
-              <StatusMessage type={adminStatus.type} message={adminStatus.message} />
-            </>
-          ) : (
-            <>
-              <div className="admin-toolbar">
-                <div>
-                  <p className="admin-label">Signed in</p>
-                  <strong>{adminUser.username}</strong>
-                </div>
-                <button className="ghost-button" type="button" onClick={handleAdminLogout}>
-                  Sign Out
-                </button>
-              </div>
+          <p>Our expertise spans across multiple workforce categories:</p>
 
-              <form className="stack" onSubmit={handleUpload}>
-                <label className="field">
-                  <span>Salary Excel File</span>
-                  <input
-                    type="file"
-                    accept=".xlsx"
-                    onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
-                  />
-                </label>
+          <ul className="about-list">
+            <li>
+              <strong>Technical Roles:</strong> CNC operators, welders, machinists, brazing
+              gunners, and ITI/polytechnic-trained technicians.
+            </li>
+            <li>
+              <strong>Quality &amp; Maintenance:</strong> Quality controllers, inspectors, and
+              maintenance engineers ensuring consistency and reduced downtime.
+            </li>
+            <li>
+              <strong>Supervision &amp; Engineering:</strong> Production planners and engineers
+              optimizing workflows.
+            </li>
+            <li>
+              <strong>Adaptability:</strong> Workforce trained to work with advanced robotics and
+              automated systems.
+            </li>
+          </ul>
 
-                <button className="primary-button" type="submit" disabled={isUploading}>
-                  {isUploading ? "Uploading..." : "Upload Salary Sheet"}
-                </button>
-              </form>
+          <p>
+            We maintain strict compliance with <strong>PF, ESI, and labour regulations</strong>,
+            while ensuring employee welfare through safe working environments and hostel facilities.
+            We are currently working as a client partner for Amber Enterprises India Limited across
+            two plants with around 200+ members.
+          </p>
 
-              <StatusMessage type={uploadStatus.type} message={uploadStatus.message} />
-              <UploadLogTable log={uploadLog} />
-              {recentLogs.length > 0 ? (
-                <div className="recent-logs">
-                  <h3>Recent Uploads</h3>
-                  <div className="recent-log-list">
-                    {recentLogs.map((logItem) => (
-                      <div className="recent-log-item" key={logItem.id}>
-                        <strong>{logItem.file_name}</strong>
-                        <span>
-                          {logItem.success_count} success / {logItem.failure_count} failed
-                        </span>
-                        <span>{new Date(logItem.created_at).toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="empty-state-panel">No upload history yet.</div>
-              )}
-            </>
-          )}
-        </SectionCard>
+          <a href="#contact" className="btn">
+            Get in Touch
+          </a>
+        </div>
 
-        <SectionCard
-          title="Employee Portal"
-          subtitle="Search with employee code and payroll month to view salary details and download a PDF slip."
-        >
-          <form className="stack" onSubmit={handleSearch}>
-            <label className="field">
-              <span>Employee Code</span>
-              <input
-                type="text"
-                placeholder="EMP001"
-                value={employeeCode}
-                onChange={(event) => setEmployeeCode(event.target.value)}
-              />
-            </label>
+        <div className="about-image">
+          <img
+            src="https://images.unsplash.com/photo-1581090700227-1e8a3f41a1d6?auto=format&fit=crop&w=1200&q=80"
+            alt="Workforce Image"
+          />
 
-            <label className="field">
-              <span>Month</span>
-              <input
-                type="month"
-                value={payrollMonth}
-                onChange={(event) => setPayrollMonth(event.target.value)}
-              />
-            </label>
+          <div className="workforce-box">
+            <h3>200+</h3>
+            <p>Active Workforce</p>
+          </div>
+        </div>
+      </section>
 
-            <button className="primary-button" type="submit" disabled={isSearching}>
-              {isSearching ? "Searching..." : "Fetch Salary Details"}
-            </button>
-          </form>
+      <section id="services">
+        <h2 className="section-title">Our Services</h2>
+        <div className="services">
+          <div className="card">Manpower Supply</div>
+          <div className="card">Skilled Labour Hiring</div>
+          <div className="card">Unskilled Labour</div>
+          <div className="card">PF &amp; ESI Management</div>
+          <div className="card">Hostel Facility</div>
+        </div>
+      </section>
+
+      <section id="salary" className="salary">
+        <h2>Download Salary Slip</h2>
+
+        <div className="salary-box">
+          <div className="salary-field">
+            <label>Employee ID</label>
+            <input
+              type="text"
+              placeholder="Enter Employee ID"
+              id="empId"
+              value={employeeCode}
+              onChange={(event) => setEmployeeCode(event.target.value)}
+            />
+          </div>
+
+          <div className="salary-field">
+            <label>Month</label>
+            <input
+              type="month"
+              id="month"
+              value={payrollMonth}
+              onChange={(event) => setPayrollMonth(event.target.value)}
+            />
+          </div>
+
+          <button className="btn salary-btn" onClick={handleSearch} disabled={isSearching}>
+            {isSearching ? "Fetching..." : "Fetch Details"}
+          </button>
 
           <StatusMessage type={employeeStatus.type} message={employeeStatus.message} />
-          <SalaryDetails data={salaryData} employee={employeeData} />
-        </SectionCard>
-      </main>
+        </div>
+      </section>
+
+      <section id="contact" className="contact-section">
+        <h2>Contact Us</h2>
+        <p>Email: inservaenterprisesllp@gmail.com</p>
+        <p>Phone: 9063338875 / 7815844141</p>
+
+        <div className="contact-box">
+          <h3>New Employee Enquiry</h3>
+
+          <input
+            type="text"
+            id="name"
+            placeholder="Full Name"
+            value={enquiryForm.name}
+            onChange={(event) =>
+              setEnquiryForm((current) => ({ ...current, name: event.target.value }))
+            }
+          />
+          <input
+            type="text"
+            id="phone"
+            placeholder="Phone Number"
+            value={enquiryForm.phone}
+            onChange={(event) =>
+              setEnquiryForm((current) => ({ ...current, phone: event.target.value }))
+            }
+          />
+          <input
+            type="email"
+            id="email"
+            placeholder="Email"
+            value={enquiryForm.email}
+            onChange={(event) =>
+              setEnquiryForm((current) => ({ ...current, email: event.target.value }))
+            }
+          />
+
+          <button className="btn contact-btn" onClick={handleEnquirySubmit} disabled={isSubmittingEnquiry}>
+            {isSubmittingEnquiry ? "Submitting..." : "Submit"}
+          </button>
+
+          <StatusMessage type={enquiryStatus.type} message={enquiryStatus.message} />
+        </div>
+      </section>
+
+      <footer>
+        <p>{"\u00A9 2026 Inserva Enterprises LLP | All Rights Reserved"}</p>
+      </footer>
     </div>
   );
 }
+

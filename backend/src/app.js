@@ -6,6 +6,7 @@ const { apiLimiter } = require("./middleware/rateLimiter");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 const authRoutes = require("./routes/authRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
+const enquiryRoutes = require("./routes/enquiryRoutes");
 const salaryRoutes = require("./routes/salaryRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 
@@ -26,6 +27,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api", authRoutes);
+app.use("/api", enquiryRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api", employeeRoutes);
 app.use("/api", salaryRoutes);

@@ -1,5 +1,4 @@
-const fs = require("fs");
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 const { formatPayrollLabel } = require("../utils/date");
 
 function currency(value) {
@@ -16,25 +15,6 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function browserExecutablePath() {
-  const candidates = [
-    process.env.PUPPETEER_EXECUTABLE_PATH,
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-  ].filter(Boolean);
-
-  const match = candidates.find((candidate) => fs.existsSync(candidate));
-
-  if (!match) {
-    throw new Error(
-      "No Chrome/Edge executable found for PDF generation. Set PUPPETEER_EXECUTABLE_PATH in backend/.env."
-    );
-  }
-
-  return match;
 }
 
 function buildSlipHtml(salaryRecord) {
@@ -364,11 +344,16 @@ function buildSlipHtml(salaryRecord) {
 }
 
 async function generateSalarySlipPdfBuffer(salaryRecord) {
-  const browser = await puppeteer.launch({
-    executablePath: browserExecutablePath(),
+  const launchOptions = {
     headless: "new",
     args: ["--no-sandbox", "--disable-setuid-sandbox"]
-  });
+  };
+
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+
+  const browser = await puppeteer.launch(launchOptions);
 
   try {
     const page = await browser.newPage();
