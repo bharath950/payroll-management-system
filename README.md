@@ -98,6 +98,12 @@ Important backend auth variables:
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 
+Database configuration options:
+
+- Preferred: set `DATABASE_URL` to the full PostgreSQL/Supabase URI
+- Easier manual option: set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`
+- `DB_SSL=true` is recommended for hosted databases such as Supabase and Render
+
 Frontend environment template:
 
 - [frontend/.env.example](C:/Users/kuppa/OneDrive/Music/Documents/New%20project/frontend/.env.example)
@@ -144,10 +150,13 @@ This creates `samples/sample-salary-data.xlsx`.
 1. Push the project to GitHub.
 2. Create a new Render Web Service.
 3. Set the root directory to `backend`.
-4. Build command: `npm install`
+4. Build command: `npm install` or `npm run build`
 5. Start command: `npm start`
 6. Add all backend environment variables.
-7. Set `DATABASE_URL` to your Supabase PostgreSQL connection string.
+7. Set either:
+   - `DATABASE_URL` to the exact full connection string copied from Supabase `Connect`, or
+   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and `DB_SSL=true`
+8. Set `FRONTEND_URL` to your deployed Vercel URL.
 
 ### Frontend on Vercel
 
@@ -161,7 +170,8 @@ This creates `samples/sample-salary-data.xlsx`.
 1. Create a Supabase project.
 2. Open the SQL editor.
 3. Run [database/schema.sql](C:/Users/kuppa/OneDrive/Music/Documents/New%20project/database/schema.sql).
-4. Copy the connection string into Render backend environment variables.
+4. Copy the exact connection string from `Connect`.
+5. If you enter values manually instead of using `DATABASE_URL`, prefer the `Session pooler` host plus `DB_SSL=true`.
 
 ## Notes
 

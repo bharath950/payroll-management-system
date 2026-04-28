@@ -10,6 +10,8 @@ const enquiryRoutes = require("./routes/enquiryRoutes");
 const salaryRoutes = require("./routes/salaryRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 
+const { getDatabaseStatus } = require("./config/db");
+
 const app = express();
 
 app.use(
@@ -23,7 +25,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", apiLimiter);
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  const database = getDatabaseStatus();
+  const isHealthy = database.connected;
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "ok" : "degraded",
+    timestamp: new Date().toISOString(),
+    database
+  });
 });
 
 app.use("/api", authRoutes);
