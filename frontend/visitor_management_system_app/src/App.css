@@ -1,0 +1,246 @@
+:root {
+  color: #17202a;
+  background: #f4f7f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f7f9;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+.primary-link {
+  border: 0;
+  border-radius: 6px;
+  background: #176d67;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.login-page {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.login-panel {
+  max-width: 560px;
+}
+
+.login-panel h1,
+.topbar h1 {
+  font-size: 42px;
+  line-height: 1.05;
+  margin: 0 0 12px;
+}
+
+.login-panel p {
+  color: #46515c;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.eyebrow {
+  color: #176d67;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.app-shell {
+  margin: 0 auto;
+  max-width: 1280px;
+  padding: 24px;
+}
+
+.topbar {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.stats-grid article,
+.visitor-form,
+.visitor-list {
+  background: #ffffff;
+  border: 1px solid #dce4e8;
+  border-radius: 8px;
+}
+
+.stats-grid article {
+  padding: 18px;
+}
+
+.stats-grid span {
+  color: #63717d;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.stats-grid strong {
+  font-size: 32px;
+}
+
+.workspace {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 380px minmax(0, 1fr);
+}
+
+.visitor-form,
+.visitor-list {
+  padding: 18px;
+}
+
+.visitor-form h2,
+.visitor-list h2 {
+  margin: 0 0 16px;
+}
+
+.visitor-form label {
+  color: #31404c;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.visitor-form input,
+.visitor-form select,
+.visitor-form textarea {
+  border: 1px solid #cbd6dc;
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+}
+
+.visitor-form textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.two-column {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.status-message {
+  color: #176d67;
+  margin: 12px 0 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e4ebef;
+  padding: 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: #5b6975;
+  font-size: 13px;
+}
+
+td span {
+  color: #66737e;
+  display: block;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.pill {
+  background: #e7f3ef;
+  border-radius: 999px;
+  color: #176d67;
+  display: inline-block;
+  padding: 5px 9px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  background: #263845;
+  padding: 8px 10px;
+}
+
+.empty-state {
+  color: #66737e;
+  padding: 24px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .workspace,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell,
+  .login-page {
+    padding: 16px;
+  }
+
+  .login-panel h1,
+  .topbar h1 {
+    font-size: 32px;
+  }
+
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+}
